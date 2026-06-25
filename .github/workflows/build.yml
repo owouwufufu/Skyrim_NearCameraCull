@@ -23,13 +23,14 @@ jobs:
           vcpkgGitCommitId: 'a34c873a9717a888f58dc05268dea15592c2f822'
           # Cache the installed packages between runs
           doNotCache: false
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
 
       # ── Configure ───────────────────────────────────────────────────────────
       - name: Configure CMake
         run: |
           cmake --preset release
         env:
-          VCPKG_ROOT: ${{ env.RUNVCPKG_VCPKG_ROOT }}
+          VCPKG_ROOT: '${{ github.workspace }}/vcpkg'
 
       # ── Build ───────────────────────────────────────────────────────────────
       - name: Build
