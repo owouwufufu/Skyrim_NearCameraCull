@@ -13,34 +13,25 @@ jobs:
     name: MSVC Release (AE 1.6.1170)
 
     steps:
-      # ── Checkout ────────────────────────────────────────────────────────────
       - uses: actions/checkout@v4
 
-      # ── vcpkg cache + bootstrap ─────────────────────────────────────────────
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: 'a34c873a9717a888f58dc05268dea15592c2f822'
-          # Cache the installed packages between runs
-          doNotCache: false
-          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-
-      # ── Configure ───────────────────────────────────────────────────────────
-      - name: Configure CMake
+      - name: Clone and bootstrap vcpkg
         run: |
-          cmake --preset release
-        env:
-          VCPKG_ROOT: '${{ github.workspace }}/vcpkg'
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          cd vcpkg
+          git checkout a34c873a9717a888f58dc05268dea15592c2f822
+          .\bootstrap-vcpkg.bat -disableMetrics
 
-      # ── Build ───────────────────────────────────────────────────────────────
+      - name: Configure CMake
+        run: cmake --preset release
+        env:
+          VCPKG_ROOT: '${{ github.workspace }}\vcpkg'
+
       - name: Build
         run: cmake --build --preset release
 
-      # ── Stage artifact ──────────────────────────────────────────────────────
       - name: Stage plugin files
-        run: |
-          cmake --install build/release --prefix staging
-          # staging/SKSE/Plugins/CameraCull.dll + CameraCull.ini
+        run: cmake --install build/release --prefix staging
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -48,11 +39,9 @@ jobs:
           name: CameraCull-AE
           path: staging/
 
-      # ── Release (only on version tags) ──────────────────────────────────────
       - name: Zip for release
         if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          Compress-Archive -Path staging\* -DestinationPath CameraCull-AE.zip
+        run: Compress-Archive -Path staging\* -DestinationPath CameraCull-AE.zip
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
