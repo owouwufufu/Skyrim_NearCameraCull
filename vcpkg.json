@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "cameracull",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "commonlibsse-ng",
+      "version>=": "3.5.5",
+      "features": ["ae"]
+    },
+    "simpleini",
+    "spdlog"
+  ],
+  "builtin-baseline": "a34c873a9717a888f58dc05268dea15592c2f822",
+  "overrides": []
+}

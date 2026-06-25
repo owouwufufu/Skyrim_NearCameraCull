@@ -1,0 +1,61 @@
+name: Build CameraCull
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    name: MSVC Release (AE 1.6.1170)
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── vcpkg cache + bootstrap ─────────────────────────────────────────────
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'a34c873a9717a888f58dc05268dea15592c2f822'
+          # Cache the installed packages between runs
+          doNotCache: false
+
+      # ── Configure ───────────────────────────────────────────────────────────
+      - name: Configure CMake
+        run: |
+          cmake --preset release
+        env:
+          VCPKG_ROOT: ${{ env.RUNVCPKG_VCPKG_ROOT }}
+
+      # ── Build ───────────────────────────────────────────────────────────────
+      - name: Build
+        run: cmake --build --preset release
+
+      # ── Stage artifact ──────────────────────────────────────────────────────
+      - name: Stage plugin files
+        run: |
+          cmake --install build/release --prefix staging
+          # staging/SKSE/Plugins/CameraCull.dll + CameraCull.ini
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CameraCull-AE
+          path: staging/
+
+      # ── Release (only on version tags) ──────────────────────────────────────
+      - name: Zip for release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          Compress-Archive -Path staging\* -DestinationPath CameraCull-AE.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: CameraCull-AE.zip
+          generate_release_notes: true
